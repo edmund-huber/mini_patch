@@ -1,0 +1,7 @@
+build/
+dist/
+env/
+mini_patch.egg-info/
+.hypothesis/
+*.pyc
+*.swp

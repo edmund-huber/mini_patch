@@ -39,8 +39,8 @@ def _read_mini_int(s, i, terminators):
 
 
 def apply_mini_patch(a, mini_patch):
-    b = str(a)
-    b_indices = range(len(a))
+    orig_len = len(a)
+    a_indices = range(len(a))
     version = None
     op = None
     params = []
@@ -70,31 +70,31 @@ def apply_mini_patch(a, mini_patch):
             elif op == 'r' and len(params) == 3:
                 # Apply 'replace' op.
                 where, how_much, what = params
-                where = b_indices.index(where)
-                b = b[:where] + what + b[where+how_much:]
-                b_indices = b_indices[:where] + ([None] * len(what)) + b_indices[where+how_much:]
+                where = a_indices.index(where)
+                a = a[:where] + what + a[where+how_much:]
+                a_indices = a_indices[:where] + ([None] * len(what)) + a_indices[where+how_much:]
                 op = None
                 params = []
             elif op == 'd' and len(params) == 2:
                 # Apply 'delete' op.
                 where, how_much = params
-                where = b_indices.index(where)
-                b = b[:where] + b[where+how_much:]
-                b_indices = b_indices[:where] + b_indices[where+how_much:]
+                where = a_indices.index(where)
+                a = a[:where] + a[where+how_much:]
+                a_indices = a_indices[:where] + a_indices[where+how_much:]
                 op = None
                 params = []
             elif op == 'i' and len(params) == 2:
                 # Apply 'insert' op.
                 where, what = params
-                if where < len(a):
-                    where = b_indices.index(where)
-                    b = b[:where] + what + b[where:]
-                    b_indices = b_indices[:where] + ([None] * len(what)) + b_indices[where:]
+                if where < orig_len:
+                    where = a_indices.index(where)
+                    a = a[:where] + what + a[where:]
+                    a_indices = a_indices[:where] + ([None] * len(what)) + a_indices[where:]
                 else:
                     # Insert may wish to put things at the end, which we don't
                     # have an index for.
-                    b = b + what
-                    b_indices = b_indices + ([None] * len(what))
+                    a = a + what
+                    a_indices = a_indices + ([None] * len(what))
                 op = None
                 params = []
             else:
@@ -115,5 +115,5 @@ def apply_mini_patch(a, mini_patch):
                 else:
                     raise BadMiniPatch()
     except (KeyError, BadMiniPatch):
-        return b, False
-    return b, True
+        return a, False
+    return a, True

@@ -17,9 +17,9 @@ But you want a smaller patchfile than what difflib's `unified_diff()` creates?
 tiny patches:
 
 ```
->>> patch = mini_patch.make_mini_patch(a, b)
->>> print patch
-'0!d:8,2;i:11,$3$top;i:12,$4$ and;r:19,1,$1$g;i:21,$6$ go go;'
+>>> patch = mini_patch.make_mini_patch(a.encode('utf-8'), b.encode('utf-8'))
+>>> patch
+'0!d:8,2;i:11,$4$dG9w;i:12,$8$IGFuZA==;r:19,1,$4$Zw==;i:21,$8$IGdvIGdv;'
 >>> len(patch)
-60
+70
 ```

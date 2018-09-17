@@ -1,26 +1,40 @@
+import base64
 import difflib
 import json
+import six
 import string
 
 
-VERSION = 0
+VERSION = 1
 
 
 def make_mini_patch(a, b):
-    s_m = difflib.SequenceMatcher(None, a, b)
+    if not isinstance(a, six.binary_type):
+        raise TypeError("a bytes-like object is required, not '{}'".format(type(a).__name__))
+    if not isinstance(b, six.binary_type):
+        raise TypeError("a bytes-like object is required, not '{}'".format(type(b).__name__))
+
+    s_m = difflib.SequenceMatcher(isjunk=None, a=a, b=b, autojunk=False)
     mini_patch = '{}!'.format(VERSION)
+    first = True
     for tag, i1, i2, j1, j2 in s_m.get_opcodes():
+        if first:
+            assert i1 == j1 == 0
+            first = False
+        else:
+            assert i1 == prev_i2
+            assert j1 == prev_j2
+        prev_i2 = i2
+        prev_j2 = j2
         if tag == 'replace':
-            _len1 = i2 - i1
-            _len2 = j2 - j1
-            mini_patch += 'r:{},{},${}${};'.format(i1, _len1, _len2, b[j1:j2])
+            b64_encoded = base64.b64encode(b[j1:j2]).decode('ascii')
+            mini_patch += 'r:{},{},${}${};'.format(i1, i2 - i1, len(b64_encoded), b64_encoded)
         elif tag == 'delete':
-            _len = i2 - i1
-            mini_patch += 'd:{},{};'.format(i1, _len)
+            mini_patch += 'd:{},{};'.format(i1, i2 - i1)
         elif tag == 'insert':
             assert i1 == i2
-            _len = j2 - j1
-            mini_patch += 'i:{},${}${};'.format(i1, _len, b[j1:j2])
+            b64_encoded = base64.b64encode(b[j1:j2]).decode('ascii')
+            mini_patch += 'i:{},${}${};'.format(i1, len(b64_encoded), b64_encoded)
         elif tag == 'equal':
             pass
     return mini_patch
@@ -40,7 +54,7 @@ def _read_mini_int(s, i, terminators):
 
 def apply_mini_patch(a, mini_patch):
     orig_len = len(a)
-    a_indices = range(len(a))
+    a_indices = list(range(len(a)))
     version = None
     op = None
     params = []
@@ -55,7 +69,7 @@ def apply_mini_patch(a, mini_patch):
             if version is None:
                 i, version = _read_mini_int(mini_patch, i, '!')
                 i += 1
-                if version != 0:
+                if version != VERSION:
                     raise BadMiniPatch()
             elif eat is not None:
                 if mini_patch[i] not in eat:
@@ -70,6 +84,7 @@ def apply_mini_patch(a, mini_patch):
             elif op == 'r' and len(params) == 3:
                 # Apply 'replace' op.
                 where, how_much, what = params
+                what = base64.b64decode(what)
                 where = a_indices.index(where)
                 a = a[:where] + what + a[where+how_much:]
                 a_indices = a_indices[:where] + ([None] * len(what)) + a_indices[where+how_much:]
@@ -86,6 +101,7 @@ def apply_mini_patch(a, mini_patch):
             elif op == 'i' and len(params) == 2:
                 # Apply 'insert' op.
                 where, what = params
+                what = base64.b64decode(what)
                 if where < orig_len:
                     where = a_indices.index(where)
                     a = a[:where] + what + a[where:]

@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='mini_patch',
-    version='0.0.3',
+    version='1.0.0',
     author='Edmund Huber',
     author_email='me@ehuber.info',
     description="Tiny diffs using difflib's SequenceMatcher",

@@ -1,4 +1,4 @@
-Do you have textual or binary data that you need to patch?
+Do you have textual (or binary) data that you need to patch?
 
 ```
 >>> a = 'you say yes, i say no'
@@ -14,7 +14,7 @@ But you want a smaller patchfile than what difflib's `unified_diff()` creates?
 ```
 
 `mini_patch` also uses difflib's `SequenceMatcher` machinery, but it creates
-tiny patches:
+tiny, ASCII-encoded patches:
 
 ```
 >>> patch = mini_patch.make_mini_patch(a.encode('utf-8'), b.encode('utf-8'))

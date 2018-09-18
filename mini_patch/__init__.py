@@ -37,7 +37,7 @@ def make_mini_patch(a, b):
             mini_patch += 'i:{},${}${};'.format(i1, len(b64_encoded), b64_encoded)
         elif tag == 'equal':
             pass
-    return mini_patch
+    return mini_patch.encode('ascii')
 
 
 class BadMiniPatch(Exception):
@@ -53,6 +53,12 @@ def _read_mini_int(s, i, terminators):
 
 
 def apply_mini_patch(a, mini_patch):
+    if not isinstance(a, six.binary_type):
+        raise TypeError("a bytes-like object is required, not '{}'".format(type(a).__name__))
+    if not isinstance(mini_patch, six.binary_type):
+        raise TypeError("a bytes-like object is required, not '{}'".format(type(mini_patch).__name__))
+    mini_patch = mini_patch.decode('ascii')
+
     orig_len = len(a)
     a_indices = list(range(len(a)))
     version = None
